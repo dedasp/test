@@ -1,0 +1,106 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode.app
+        
+      - name: Build and run unit tests
+        run: |
+          xcodebuild test \
+            -project test/test.xcodeproj \
+            -scheme test \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -only-testing:testTests \
+            -enableCodeCoverage YES \
+            | xcpretty
+        working-directory: test
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: test/test.xcodeproj/xcuserdata/
+          retention-days: 7
+
+  ui-tests:
+    name: UI Tests
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode.app
+        
+      - name: Build and run UI tests
+        run: |
+          xcodebuild test \
+            -project test/test.xcodeproj \
+            -scheme test \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -only-testing:testUITests \
+            | xcpretty
+        working-directory: test
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-test-results
+          path: test/test.xcodeproj/xcuserdata/
+          retention-days: 7
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, ui-tests]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download unit test results
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-results
+          path: unit-results
+          
+      - name: Download UI test results
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-test-results
+          path: ui-results
+          
+      - name: Test Summary
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Unit Tests" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.unit-tests.result }}" == "success" ]; then
+            echo "✅ Unit tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Unit tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### UI Tests" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.ui-tests.result }}" == "success" ]; then
+            echo "✅ UI tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ UI tests failed" >> $GITHUB_STEP_SUMMARY
+          fi 
