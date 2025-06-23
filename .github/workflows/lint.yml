@@ -1,8 +1,10 @@
 name: SwiftLint
 
 on:
+  push:
+    branches: [main, master, develop]
   pull_request:
-    branches: [main]  # Change to your default branch
+    branches: [main, master, develop]
 
 jobs:
   lint:
@@ -11,15 +13,23 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install SwiftLint
-        run: brew install swiftlint
+        run: |
+          set -e  # Exit on any error
+          brew install swiftlint
+          swiftlint version
 
       - name: Run SwiftLint
         run: |
+          set -e  # Exit on any error
+          echo "🔍 Running SwiftLint with strict mode..."
           swiftlint lint --strict
           if [ $? -ne 0 ]; then
-            echo "SwiftLint failed, blocking merge."
+            echo "❌ SwiftLint failed, blocking merge."
+            echo "💡 Fix the linting issues above and try again."
             exit 1
+          else
+            echo "✅ SwiftLint passed successfully!"
           fi
