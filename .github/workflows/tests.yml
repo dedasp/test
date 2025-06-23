@@ -23,13 +23,17 @@ jobs:
           xcodebuild -version
           xcode-select -p
         
+      - name: List available simulators
+        run: |
+          xcrun simctl list devices available | grep iPhone
+          
       - name: Build and run unit tests
         run: |
           set -e  # Exit on any error
           xcodebuild test \
             -project test.xcodeproj \
             -scheme test \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
             -only-testing:testTests \
             -enableCodeCoverage YES \
             | xcpretty
@@ -64,13 +68,17 @@ jobs:
           xcodebuild -version
           xcode-select -p
         
+      - name: List available simulators
+        run: |
+          xcrun simctl list devices available | grep iPhone
+          
       - name: Build and run UI tests
         run: |
           set -e  # Exit on any error
           xcodebuild test \
             -project test.xcodeproj \
             -scheme test \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
             -only-testing:testUITests \
             | xcpretty
           # Check if xcodebuild failed (PIPESTATUS captures exit code from pipe)
