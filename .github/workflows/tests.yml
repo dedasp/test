@@ -25,6 +25,7 @@ jobs:
         
       - name: Build and run unit tests
         run: |
+          set -e  # Exit on any error
           xcodebuild test \
             -project test.xcodeproj \
             -scheme test \
@@ -32,6 +33,11 @@ jobs:
             -only-testing:testTests \
             -enableCodeCoverage YES \
             | xcpretty
+          # Check if xcodebuild failed (PIPESTATUS captures exit code from pipe)
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ xcodebuild failed with exit code ${PIPESTATUS[0]}"
+            exit 1
+          fi
         working-directory: test
         
       - name: Upload test results
@@ -60,12 +66,18 @@ jobs:
         
       - name: Build and run UI tests
         run: |
+          set -e  # Exit on any error
           xcodebuild test \
             -project test.xcodeproj \
             -scheme test \
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
             -only-testing:testUITests \
             | xcpretty
+          # Check if xcodebuild failed (PIPESTATUS captures exit code from pipe)
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ xcodebuild failed with exit code ${PIPESTATUS[0]}"
+            exit 1
+          fi
         working-directory: test
         
       - name: Upload test results
